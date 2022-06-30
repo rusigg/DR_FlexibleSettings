@@ -1,0 +1,119 @@
+﻿<ValueTree xmlns="http://v8.1c.ru/8.1/data/core" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ValueTree">
+	<column>
+		<Name xsi:type="xs:string">Использовать</Name>
+		<ValueType/>
+	</column>
+	<column>
+		<Name xsi:type="xs:string">ТипТранзакции</Name>
+		<ValueType/>
+	</column>
+	<column>
+		<Name xsi:type="xs:string">Служебные</Name>
+		<ValueType/>
+	</column>
+	<column>
+		<Name xsi:type="xs:string">СлужебныеТекст</Name>
+		<ValueType/>
+	</column>
+	<column>
+		<Name xsi:type="xs:string">Сохранение</Name>
+		<ValueType/>
+	</column>
+	<column>
+		<Name xsi:type="xs:string">Загрузка</Name>
+		<ValueType/>
+	</column>
+	<column>
+		<Name xsi:type="xs:string">Кнопка</Name>
+		<ValueType/>
+	</column>
+	<column>
+		<Name xsi:type="xs:string">КоллекцияТЧ</Name>
+		<ValueType/>
+	</column>
+	<row>
+		<Value xsi:type="xs:boolean">true</Value>
+		<Value xsi:type="xs:string">Входящий PRICAT</Value>
+		<Value xsi:type="xs:string">ТипШтрихКода = "ШтрихкодыНоменклатуры";
+ОбъектШтрихкода = Метаданные.РегистрыСведений.Найти(ТипШтрихКода);
+Если ОбъектШтрихкода = Неопределено Тогда
+	ТипШтрихКода = "Штрихкоды";
+КонецЕсли;
+
+ТипШтрихкодаНоменклатура = "Номенклатура"; 
+ОбъектШтрихкодаНоменклатура = Метаданные.РегистрыСведений[ТипШтрихКода].Ресурсы.Найти(ТипШтрихкодаНоменклатура);
+Если ОбъектШтрихкодаНоменклатура = Неопределено Тогда
+	ТипШтрихкодаНоменклатура = "Владелец"; 	
+КонецЕсли;
+
+// Заполняем табличную часть.
+Запрос = Новый Запрос;
+Запрос.Текст = "ВЫБРАТЬ
+               |	ПрайсЛист.ШтрихКодПродукта КАК ШтрихКодПродукта
+               |ПОМЕСТИТЬ ВТ
+               |ИЗ
+               |	&amp;ПрайсЛист КАК ПрайсЛист
+               |;
+               |
+               |////////////////////////////////////////////////////////////////////////////////
+               |ВЫБРАТЬ
+               |	ВТ.ШтрихКодПродукта КАК ШтрихКодПродукта,
+               |	ШтрихкодыНоменклатуры.Номенклатура КАК Номенклатура
+               |ИЗ
+               |	ВТ КАК ВТ
+               |		ЛЕВОЕ СОЕДИНЕНИЕ РегистрСведений.ШтрихкодыНоменклатуры КАК ШтрихкодыНоменклатуры
+               |		ПО ВТ.ШтрихКодПродукта = ШтрихкодыНоменклатуры.Штрихкод";
+
+Запрос.Текст = СтрЗаменить(Запрос.Текст, "ШтрихкодыНоменклатуры.Номенклатура", "ШтрихкодыНоменклатуры." + ТипШтрихкодаНоменклатура);
+Запрос.Текст = СтрЗаменить(Запрос.Текст, "ШтрихкодыНоменклатуры", ТипШтрихКода);
+
+Запрос.УстановитьПараметр("ПрайсЛист", Приемник.ПрайсЛист.Выгрузить( ,"ШтрихКодПродукта"));
+
+Результат = Запрос.Выполнить();
+ТЗ = Результат.Выгрузить();
+ТЗ.Индексы.Добавить("ШтрихКодПродукта");
+Для Каждого Стр Из Приемник.ПрайсЛист Цикл
+    НайденнаяСтрока = ТЗ.Найти(Стр.ШтрихКодПродукта, "ШтрихКодПродукта");    
+    Если НЕ НайденнаяСтрока = Неопределено Тогда  
+        Стр.Номенклатура     = НайденнаяСтрока.Номенклатура;
+	КонецЕсли;     
+	
+	Если НЕ ЗначениеЗаполнено(Стр.Номенклатура) Тогда
+		ТекстОшибки = ТекстОшибки  + ?(ЗначениеЗаполнено(ТекстОшибки), Символы.ПС, "") + "Номенклатура не найдена - " + Стр.ПолноеНазваниеПродукта + " штрих код - " + Стр.ШтрихКодПродукта;
+	КонецЕсли;
+     
+КонецЦикла;
+</Value>
+		<Value xsi:type="xs:string"/>
+		<Value xsi:type="xs:decimal">0</Value>
+		<Value xsi:type="xs:decimal">0</Value>
+		<Value xsi:type="xs:string">Входящий PRICAT</Value>
+		<Value xsi:type="ValueListType">
+			<valueType/>
+			<lastId xsi:type="xs:decimal">4</lastId>
+			<item>
+				<value xsi:type="xs:string">ИмяКнопки</value>
+				<presentation>Входящий PRICAT</presentation>
+				<checkState>1</checkState>
+				<id xsi:type="xs:decimal">0</id>
+			</item>
+			<item>
+				<value xsi:type="xs:string">Покупатель</value>
+				<id xsi:type="xs:decimal">1</id>
+			</item>
+			<item>
+				<value xsi:type="xs:string">Поставщик</value>
+				<id xsi:type="xs:decimal">2</id>
+			</item>
+			<item>
+				<value xsi:type="xs:string">ЭТРН</value>
+				<id xsi:type="xs:decimal">3</id>
+			</item>
+			<item>
+				<value xsi:type="xs:string">Прайс-лист</value>
+				<checkState>1</checkState>
+				<id xsi:type="xs:decimal">4</id>
+			</item>
+		</Value>
+	</row>
+</ValueTree>
