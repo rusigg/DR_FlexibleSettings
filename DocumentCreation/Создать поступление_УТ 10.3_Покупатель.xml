@@ -46,8 +46,8 @@
 	<row>
 		<Value xsi:type="xs:boolean">true</Value>
 		<Value xsi:type="xs:string">Создать поступление</Value>
-		<Value xsi:type="xs:string">Заказ_Исходящий</Value>
-		<Value xsi:type="xs:string">Заказ_Исходящий</Value>
+		<Value xsi:type="xs:string">DESADV_Входящий</Value>
+		<Value xsi:type="xs:string">DESADV_Входящий</Value>
 		<Value xsi:type="xs:string">Накладная_Входящая</Value>
 		<Value xsi:type="xs:string"/>
 		<Value xsi:nil="true"/>
