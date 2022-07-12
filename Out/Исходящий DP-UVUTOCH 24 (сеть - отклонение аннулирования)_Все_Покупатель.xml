@@ -511,6 +511,9 @@
 			<Property name="ИдентификаторЦепочки">
 				<Value xsi:type="xs:string">Документ.ИдентификаторЦепочки</Value>
 			</Property>
+			<Property name="ТекстАннулирования">
+				<Value xsi:type="xs:string">Документ.ТекстУведУточ</Value>
+			</Property>
 		</Value>
 		<Value xsi:type="ValueListType">
 			<valueType/>
