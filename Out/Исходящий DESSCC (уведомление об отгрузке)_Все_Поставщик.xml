@@ -2536,12 +2536,36 @@
 
 Запрос = Новый Запрос;
 Запрос.Текст = "ВЫБРАТЬ РАЗЛИЧНЫЕ
-               |	ЭКОМ_Палеты.Документ КАК Документ
-               |ПОМЕСТИТЬ ВТ_Палеты
+               |	ЭКОМ_Палеты.Документ КАК Документ,
+               |	ВЫБОР
+               |		КОГДА СУММА(ЭКОМ_Палеты.Количество) - СУММА(ЕСТЬNULL(РеализацияТоваровУслугТовары.Количество, 0)) &gt; 0
+               |			ТОГДА ИСТИНА
+               |		ИНАЧЕ ЛОЖЬ
+               |	КОНЕЦ КАК НеХватаетТовараВРТУ
+               |ПОМЕСТИТЬ ВТ_НедостачаРТУ
                |ИЗ
                |	РегистрСведений.ЭКОМ_Палеты КАК ЭКОМ_Палеты
+               |		ЛЕВОЕ СОЕДИНЕНИЕ Документ.РеализацияТоваровУслуг.Товары КАК РеализацияТоваровУслугТовары
+               |		ПО (ЭКОМ_Палеты.Документ = РеализацияТоваровУслугТовары.Ссылка)
+               |			И (ЭКОМ_Палеты.Номенклатура = РеализацияТоваровУслугТовары.Номенклатура)
                |ГДЕ
                |	ЭКОМ_Палеты.Документ В(&amp;Источник)
+               |
+               |СГРУППИРОВАТЬ ПО
+               |	ЭКОМ_Палеты.Документ,
+               |	ЭКОМ_Палеты.Номенклатура
+               |;
+               |
+               |////////////////////////////////////////////////////////////////////////////////
+               |ВЫБРАТЬ
+               |	ВТ_НедостачаРТУ.Документ КАК Документ,
+               |	МАКСИМУМ(ВТ_НедостачаРТУ.НеХватаетТовараВРТУ) КАК НеХватаетТовараВРТУ
+               |ПОМЕСТИТЬ ВТ_Палеты
+               |ИЗ
+               |	ВТ_НедостачаРТУ КАК ВТ_НедостачаРТУ
+               |
+               |СГРУППИРОВАТЬ ПО
+               |	ВТ_НедостачаРТУ.Документ
                |;
                |
                |////////////////////////////////////////////////////////////////////////////////
@@ -2572,6 +2596,7 @@
                |			ТОГДА ЛОЖЬ
                |		ИНАЧЕ ИСТИНА
                |	КОНЕЦ КАК ЕстьПалеты,
+               |	ВТ_Палеты.НеХватаетТовараВРТУ КАК НеХватаетТовараВРТУ,
                |	ПРЕДСТАВЛЕНИЕ(РеализацияТоваровУслуг.Ссылка) КАК ПредставлениеРТУ,
                |	ЭКОМ_ТранспортнаяИнформация.ВодительФамилия КАК ВодительФамилия,
                |	ЭКОМ_ТранспортнаяИнформация.ВодительИмя КАК ВодительИмя,
@@ -2582,13 +2607,13 @@
                |ИЗ
                |	Документ.РеализацияТоваровУслуг КАК РеализацияТоваровУслуг
                |		ЛЕВОЕ СОЕДИНЕНИЕ РегистрСведений.ЭКОМ_ТранспортнаяИнформация КАК ЭКОМ_ТранспортнаяИнформация
-               |		ПО (РеализацияТоваровУслуг.Ссылка = ЭКОМ_ТранспортнаяИнформация.Документ)
+               |		ПО РеализацияТоваровУслуг.Ссылка = ЭКОМ_ТранспортнаяИнформация.Документ
                |		ЛЕВОЕ СОЕДИНЕНИЕ ВТ_Палеты КАК ВТ_Палеты
-               |		ПО (РеализацияТоваровУслуг.Ссылка = ВТ_Палеты.Документ)
+               |		ПО РеализацияТоваровУслуг.Ссылка = ВТ_Палеты.Документ
                |		ЛЕВОЕ СОЕДИНЕНИЕ РегистрСведений.DR_События КАК DR_СобытияРТУ
                |			ЛЕВОЕ СОЕДИНЕНИЕ РегистрСведений.DR_События КАК DR_СобытияORDER
-               |			ПО (DR_СобытияРТУ.ИдентификаторЦепочки = DR_СобытияORDER.ИдентификаторЦепочки)
-               |			И (DR_СобытияORDER.ВидДокумента = ЗНАЧЕНИЕ(перечисление.ЭКОМ_ВидыДокументов.ORDER_Входящий))
+               |			ПО DR_СобытияРТУ.ИдентификаторЦепочки = DR_СобытияORDER.ИдентификаторЦепочки
+               |				И (DR_СобытияORDER.ВидДокумента = ЗНАЧЕНИЕ(перечисление.ЭКОМ_ВидыДокументов.ORDER_Входящий))
                |		ПО (DR_СобытияРТУ.Документ = РеализацияТоваровУслуг.Ссылка)
                |			И (DR_СобытияРТУ.ВидДокумента = ЗНАЧЕНИЕ(перечисление.ЭКОМ_ВидыДокументов.Накладная_Исходящая))
                |ГДЕ
@@ -2622,6 +2647,11 @@ EDIINTERCHANGEID = 0;
 	Если НЕ Строка.ЕстьПалеты Тогда
 		МассивСтрокДляУдаления.Добавить(Строка);
 		ТекстОшибки = "DESSCC по документу " + Строка.ПредставлениеРТУ + " не отправлен, т.к. товары не распределены по палетам.";
+		ЗаписатьЛогСобытий(ЛогСобытий, ТекстОшибки);
+		Продолжить;
+	ИначеЕсли Строка.НеХватаетТовараВРТУ = Истина Тогда
+	    МассивСтрокДляУдаления.Добавить(Строка);
+		ТекстОшибки = "DESSCC по документу " + Строка.ПредставлениеРТУ + " не отправлен, т.к. не хватает количества по позициям в РТУ.";
 		ЗаписатьЛогСобытий(ЛогСобытий, ТекстОшибки);
 		Продолжить;
 	КонецЕсли;
@@ -2660,7 +2690,7 @@ EDIINTERCHANGEID = 0;
 		<Value xsi:type="ValueTable"/>
 		<Value xsi:type="ValueListType">
 			<valueType/>
-			<lastId xsi:type="xs:decimal">44</lastId>
+			<lastId xsi:type="xs:decimal">45</lastId>
 			<item>
 				<value xsi:type="xs:string">Ссылка</value>
 				<id xsi:type="xs:decimal">0</id>
@@ -2750,96 +2780,100 @@ EDIINTERCHANGEID = 0;
 				<id xsi:type="xs:decimal">21</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">ПредставлениеРТУ</value>
+				<value xsi:type="xs:string">НеХватаетТовараВРТУ</value>
 				<id xsi:type="xs:decimal">22</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">ВодительФамилия</value>
+				<value xsi:type="xs:string">ПредставлениеРТУ</value>
 				<id xsi:type="xs:decimal">23</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">ВодительИмя</value>
+				<value xsi:type="xs:string">ВодительФамилия</value>
 				<id xsi:type="xs:decimal">24</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">ВодительОтчество</value>
+				<value xsi:type="xs:string">ВодительИмя</value>
 				<id xsi:type="xs:decimal">25</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">НомерТС</value>
+				<value xsi:type="xs:string">ВодительОтчество</value>
 				<id xsi:type="xs:decimal">26</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">СтруктураФайлаORDER</value>
+				<value xsi:type="xs:string">НомерТС</value>
 				<id xsi:type="xs:decimal">27</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">ИдентификаторЦепочки</value>
+				<value xsi:type="xs:string">СтруктураФайлаORDER</value>
 				<id xsi:type="xs:decimal">28</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">NUMBER</value>
+				<value xsi:type="xs:string">ИдентификаторЦепочки</value>
 				<id xsi:type="xs:decimal">29</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">TTNNUMBER</value>
+				<value xsi:type="xs:string">NUMBER</value>
 				<id xsi:type="xs:decimal">30</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">DATE</value>
+				<value xsi:type="xs:string">TTNNUMBER</value>
 				<id xsi:type="xs:decimal">31</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">DELIVERYDATE</value>
+				<value xsi:type="xs:string">DATE</value>
 				<id xsi:type="xs:decimal">32</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">DELIVERYTIME</value>
+				<value xsi:type="xs:string">DELIVERYDATE</value>
 				<id xsi:type="xs:decimal">33</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">ORDERNUMBER</value>
+				<value xsi:type="xs:string">DELIVERYTIME</value>
 				<id xsi:type="xs:decimal">34</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">ORDERDATE</value>
+				<value xsi:type="xs:string">ORDERNUMBER</value>
 				<id xsi:type="xs:decimal">35</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">EDIINTERCHANGEID</value>
+				<value xsi:type="xs:string">ORDERDATE</value>
 				<id xsi:type="xs:decimal">36</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">EDIMESSAGE</value>
+				<value xsi:type="xs:string">EDIINTERCHANGEID</value>
 				<id xsi:type="xs:decimal">37</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">Идентификатор</value>
+				<value xsi:type="xs:string">EDIMESSAGE</value>
 				<id xsi:type="xs:decimal">38</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">ФайлИмя</value>
+				<value xsi:type="xs:string">Идентификатор</value>
 				<id xsi:type="xs:decimal">39</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">SELFSHIPMENT</value>
+				<value xsi:type="xs:string">ФайлИмя</value>
 				<id xsi:type="xs:decimal">40</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">TRANSPORTERNAME</value>
+				<value xsi:type="xs:string">SELFSHIPMENT</value>
 				<id xsi:type="xs:decimal">41</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">TRANSPORTID</value>
+				<value xsi:type="xs:string">TRANSPORTERNAME</value>
 				<id xsi:type="xs:decimal">42</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">FRESH</value>
+				<value xsi:type="xs:string">TRANSPORTID</value>
 				<id xsi:type="xs:decimal">43</id>
 			</item>
 			<item>
-				<value xsi:type="xs:string">НомерПоПорядку</value>
+				<value xsi:type="xs:string">FRESH</value>
 				<id xsi:type="xs:decimal">44</id>
+			</item>
+			<item>
+				<value xsi:type="xs:string">НомерПоПорядку</value>
+				<id xsi:type="xs:decimal">45</id>
 			</item>
 		</Value>
 		<Value xsi:type="ValueListType">
