@@ -62,6 +62,10 @@
 				<value xsi:type="xs:string">ЭТРН</value>
 				<id xsi:type="xs:decimal">7</id>
 			</item>
+			<item>
+				<value xsi:type="xs:string">Прайс-лист</value>
+				<id xsi:type="xs:decimal">7</id>
+			</item>
 		</Value>
 	</row>
 </ValueTree>

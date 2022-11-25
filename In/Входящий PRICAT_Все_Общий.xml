@@ -99,10 +99,12 @@
 			</item>
 			<item>
 				<value xsi:type="xs:string">Покупатель</value>
+				<checkState>1</checkState>
 				<id xsi:type="xs:decimal">1</id>
 			</item>
 			<item>
 				<value xsi:type="xs:string">Поставщик</value>
+				<checkState>1</checkState>
 				<id xsi:type="xs:decimal">2</id>
 			</item>
 			<item>
